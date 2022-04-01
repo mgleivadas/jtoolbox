@@ -1,4 +1,4 @@
-package com.brontoblocks;
+package com.brontoblocks.utils;
 
 public final class BooleanUtils {
 

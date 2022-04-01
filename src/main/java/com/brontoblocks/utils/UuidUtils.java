@@ -1,4 +1,4 @@
-package com.brontoblocks;
+package com.brontoblocks.utils;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;

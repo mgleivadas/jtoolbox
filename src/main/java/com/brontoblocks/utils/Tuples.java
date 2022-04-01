@@ -1,9 +1,9 @@
-package com.brontoblocks;
+package com.brontoblocks.utils;
 
 import java.util.Objects;
 import java.util.function.Function;
 
-import static com.brontoblocks.ArgCheck.nonNull;
+import static com.brontoblocks.utils.ArgCheck.nonNull;
 import static java.lang.String.format;
 
 public final class Tuples {

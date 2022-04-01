@@ -1,4 +1,4 @@
-package com.brontoblocks;
+package com.brontoblocks.utils;
 
 import java.math.BigDecimal;
 import java.util.Optional;

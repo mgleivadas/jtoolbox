@@ -1,4 +1,4 @@
-package com.brontoblocks;
+package com.brontoblocks.utils;
 
 import java.time.Instant;
 import java.util.Objects;

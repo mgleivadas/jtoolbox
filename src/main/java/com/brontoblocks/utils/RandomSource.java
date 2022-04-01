@@ -1,4 +1,4 @@
-package com.brontoblocks;
+package com.brontoblocks.utils;
 
 import java.util.List;
 import java.util.stream.IntStream;

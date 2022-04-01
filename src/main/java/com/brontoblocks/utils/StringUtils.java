@@ -1,10 +1,10 @@
-package com.brontoblocks;
+package com.brontoblocks.utils;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static com.brontoblocks.ArgCheck.nonEmpty;
+import static com.brontoblocks.utils.ArgCheck.nonEmpty;
 import static java.util.stream.IntStream.range;
 
 public class StringUtils {

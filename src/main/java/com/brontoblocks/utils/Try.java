@@ -1,4 +1,4 @@
-package com.brontoblocks;
+package com.brontoblocks.utils;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -7,7 +7,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import static com.brontoblocks.ArgCheck.nonNull;
+import static com.brontoblocks.utils.ArgCheck.nonNull;
 import static java.util.Optional.empty;
 
 public abstract class Try<T> {
