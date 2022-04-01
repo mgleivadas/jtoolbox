@@ -2,7 +2,6 @@ package com.brontoblocks.json;
 
 import com.brontoblocks.exception.functional.ThrowingBiConsumer;
 import com.brontoblocks.exception.functional.ThrowingBiFunction;
-import com.brontoblocks.json.deserializer.MoneyDeserializer;
 import com.brontoblocks.utils.Tuples;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -57,7 +56,6 @@ public class JsonConfiguration {
 
         private final ThrowingBiConsumer<JsonGenerator, T> serializationFunction;
     }
-
 
     @SuppressWarnings("unchecked")
     private static final class GenericDeserializer<T> extends JsonDeserializer<T> {
