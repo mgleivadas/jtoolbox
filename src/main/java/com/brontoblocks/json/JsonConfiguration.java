@@ -1,6 +1,5 @@
 package com.brontoblocks.json;
 
-import com.brontoblocks.common.Money;
 import com.brontoblocks.exception.functional.ThrowingBiConsumer;
 import com.brontoblocks.exception.functional.ThrowingBiFunction;
 import com.brontoblocks.json.deserializer.MoneyDeserializer;
@@ -90,7 +89,6 @@ public class JsonConfiguration {
         List<Tuples.T2<Class<?>, ThrowingBiFunction<JsonParser, DeserializationContext, ?>>> deserializers = new ArrayList<>();
 
         serializers.add(t2(Instant.class, (gen, value) -> gen.writeString(value.toString())));
-        deserializers.add(t2(Money.class, MoneyDeserializer::deserialize));
 
         ObjectMapper objectMapper = new ObjectMapper();
         SimpleModule module = new SimpleModule();
