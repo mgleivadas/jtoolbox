@@ -1,6 +1,6 @@
 package com.brontoblocks.simulation;
 
-import com.brontoblocks.time.TimeKeeper;
+import com.brontoblocks.chrono.TimeKeeper;
 
 import java.util.List;
 import java.util.OptionalLong;
@@ -110,21 +110,55 @@ import static com.brontoblocks.utils.ArgCheck.*;
  * <p>
  * Remember the nextArrival is expressed in RUT so some adjustment maybe needed according to implementation.
  * <p>
+ *
  * USAGE
  * =====
+ * In order to use PoissonEventGenerator there are two mandatory variables that need to be specified.
+ * The rate, which is the number of events that should be generated every referenced time unit.
+ * The timeUnit, which is the frame of reference regarding time.
+ * Together these variables specify how many events will be generated over a period of time.
+ * e.g. 100 events per 2 hours.
  *
- * @return
+ * When you want to model something like 1 event per minute it is better to model it as 60 per hour.
+ * On the other hand if you need to generate 86_400_000 events per day it probably makes much more sense
+ * to express it as 60_000 per minute. Overall, TimeUnit has enough time periods predefined to cover all scenarios.
+ * If you can't find, a specific time period, probably it was purposefully omitted to force you use an alternative one.
+ *
+ * However, no matter what TimeUnit you use, the precision is the same for all combinations.
+ * The results returned from this class remain 100% accurate at all times. Don't confuse real accuracy
+ * with "perceived accuracy". If you run an experiment just a couple of iterations, then the results you will get
+ * might not be what you expect. This has nothing to do with accuracy.
+ *
+ * e.g.
+ * If you toss a coin 3 times you will get one side 66.6% and the other one 33.3%. This outcome does not imply that
+ * tossing a normal coin does not have 50% to get landed on either side.
+ *
+ * Usage scenarios
+ * ===============
+ *
+ * 1) Generates 100 events per hour
+ *    PoissonEventGenerator.builder(100, HOUR).build()
+ *
+ *
+ * 2) Generates 1000 events per millis, using pre-buffering for extra speed and a custom PRNG
+ *    var customPRNG;
+ *    PoissonEventGenerator.builder(1000, MILLIS_1)
+ *        .withUniformPrngProvider(customPRNG)
+ *        .enablePreBuffering(100_000_000)
+ *        .build()
+ *
+ *
  */
-public final class PoissonEventTracker {
+public final class PoissonEventGenerator {
 
-  public static PoissonEventTrackerBuilder builder(long rate, TimeUnit timeUnit) {
+  public static PoissonEventGeneratorBuilder builder(long rate, TimeUnit timeUnit) {
 
-    return new PoissonEventTrackerBuilder(
+    return new PoissonEventGeneratorBuilder(
         inRange("rate", rate, 1, Long.MAX_VALUE, INCLUSIVE_INCLUSIVE),
         nonNull("timeUnit", timeUnit));
   }
 
-  private PoissonEventTracker(PoissonEventTrackerConfiguration config) {
+  private PoissonEventGenerator(PoissonEventGeneratorConfiguration config) {
     this.config = config;
     this.eventBeingHeld = OptionalLong.empty();
   }
@@ -178,50 +212,50 @@ public final class PoissonEventTracker {
 
   private volatile OptionalLong eventBeingHeld;
   private volatile long lastReportedEvent;
-  private final PoissonEventTrackerConfiguration config;
+  private final PoissonEventGeneratorConfiguration config;
 
-  private record PoissonEventTrackerConfiguration(
+  private record PoissonEventGeneratorConfiguration(
       PoissonInterArrivalTimesProvider poissonInterArrivalTimesProvider,
       TimeKeeper timeKeeper
   ) { }
 
-  public static final class PoissonEventTrackerBuilder {
+  public static final class PoissonEventGeneratorBuilder {
 
-    private PoissonEventTrackerBuilder(long rate, TimeUnit timeUnit) {
+    private PoissonEventGeneratorBuilder(long rate, TimeUnit timeUnit) {
       this.rate = rate;
       this.timeUnit = timeUnit;
       this.timeKeeper = STD_TIMEKEEPER;
-      this.uniformPrng = STD_PRNG;
+      this.uniformPrng = wrapPrngWithZeroCheck(STD_PRNG);
       this.preBufferingSize = -1;
     }
 
-    public PoissonEventTrackerBuilder withTimeKeeper(TimeKeeper timeKeeper) {
+    public PoissonEventGeneratorBuilder withTimeKeeper(TimeKeeper timeKeeper) {
       this.timeKeeper = nonNull("timeKeeper", timeKeeper);
       return this;
     }
 
-    public PoissonEventTrackerBuilder withUniformPrngProvider(UniformPrng uniformPrng) {
-      this.uniformPrng = nonNull("uniformPrng", uniformPrng);
+    public PoissonEventGeneratorBuilder withUniformPrngProvider(UniformPrng uniformPrng) {
+      this.uniformPrng = wrapPrngWithZeroCheck(nonNull("uniformPrng", uniformPrng));
       return this;
     }
 
-    public PoissonEventTrackerBuilder enablePreBuffering(int size) {
+    public PoissonEventGeneratorBuilder enablePreBuffering(int size) {
       this.preBufferingSize = noNegativeInt("size", size);
       return this;
     }
 
-    public PoissonEventTracker build() {
+    public PoissonEventGenerator build() {
 
       if (preBufferingSize > 0) {
-        return new PoissonEventTracker(
-            new PoissonEventTrackerConfiguration(
+        return new PoissonEventGenerator(
+            new PoissonEventGeneratorConfiguration(
                 new BufferedPoissonInterArrivalTimesProvider(
                     () -> getNextInterArrivalInNanos(uniformPrng, rate, timeUnit.getRutInNanos()),
                     preBufferingSize),
                 timeKeeper));
       } else {
-        return new PoissonEventTracker(
-            new PoissonEventTrackerConfiguration(
+        return new PoissonEventGenerator(
+            new PoissonEventGeneratorConfiguration(
                 () -> getNextInterArrivalInNanos(uniformPrng, rate, timeUnit.getRutInNanos()),
                 timeKeeper));
       }
@@ -244,13 +278,17 @@ public final class PoissonEventTracker {
       return Math.round(-Math.log(1 - randomness) / rate * rutInNanos);
     }
 
-    private static final UniformPrng STD_PRNG = () -> {
-      var res = 0.0;
-      while (res == 0.0) {
-        res = ThreadLocalRandom.current().nextDouble();
-      }
-      return res;
-    };
+    private static UniformPrng wrapPrngWithZeroCheck(UniformPrng uniformPrng) {
+      return () -> {
+        var res = 0.0;
+        while (res == 0.0) {
+          res = uniformPrng.getNext();
+        }
+        return res;
+      };
+    }
+
+    private static final UniformPrng STD_PRNG = ThreadLocalRandom.current()::nextDouble;
   }
 
   public enum TimeUnit {
